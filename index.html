@@ -385,7 +385,7 @@ const nid = () => 'n' + (++seq);
 const LIM = {
   scriptName: 32,   // 标题字节上限（APP_TITLE_MAX）
   folderName: 48,   // 目录/文件名段上限（APP_NAME_MAX）
-  content: 4096,    // 代码内容字节上限（APP_CONTENT_MAX）
+  content: 65535,   // 代码内容字节上限（APP_CONTENT_MAX, 64KB, 可复制大段代码）
   path: 300,        // 相对路径字节上限（APP_PATH_MAX）
 };
 
@@ -518,7 +518,7 @@ function buildNode(node) {
     const ic = document.createElement('span'); ic.className = 'tico'; ic.innerHTML = SVG.file; row.appendChild(ic);
     const nm = document.createElement('span'); nm.className = 'tname'; nm.textContent = node.name; row.appendChild(nm);
     if (u8len(node.command) > LIM.content) {
-      const w = document.createElement('span'); w.className = 'tico'; w.style.color = 'var(--err)'; w.title = '命令超出 4096 字节'; w.innerHTML = SVG.warn; row.appendChild(w);
+      const w = document.createElement('span'); w.className = 'tico ovr'; w.style.color = 'var(--err)'; w.title = '命令超出 ' + LIM.content + ' 字节'; w.innerHTML = SVG.warn; row.appendChild(w);
     }
     row.addEventListener('click', () => select(node.id));
     holder.appendChild(row);
@@ -699,8 +699,8 @@ function renderScriptEditor(el, node) {
 function markScriptOver(id, over) {
   const row = document.querySelector('.trow.script[data-id="' + id + '"]');
   if (!row) return;
-  let w = row.querySelector('.tico[title*="4096"]');
-  if (over && !w) { w = document.createElement('span'); w.className = 'tico'; w.style.color = 'var(--err)'; w.title = '命令超出 4096 字节'; w.innerHTML = SVG.warn; row.appendChild(w); }
+  let w = row.querySelector('.tico.ovr');
+  if (over && !w) { w = document.createElement('span'); w.className = 'tico ovr'; w.style.color = 'var(--err)'; w.title = '命令超出 ' + LIM.content + ' 字节'; w.innerHTML = SVG.warn; row.appendChild(w); }
   else if (!over && w) w.remove();
 }
 function mkBtn(label, kind, onClick) {
