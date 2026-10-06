@@ -724,7 +724,7 @@ document.getElementById('logHead').addEventListener('click', () => {
 /* 初始化根目录并渲染 */
 (function init() {
   state.rootId = nid();
-  state.nodes.set(state.rootId, { id: state.rootId, type: 'dir', name: '根目录', children: [], parent: null });
+  state.nodes.set(state.rootId, { id: state.rootId, type: 'dir',  children: [], parent: null });
   state.expanded.add(state.rootId);
   // 预置一条示例脚本，便于初次体验
   addScript(state.rootId, 'hello', 'echo Hello, CmdMacro!\r\ntimeout /t 2\r\necho Done\r\n');
