@@ -164,6 +164,40 @@ input,textarea{font-family:inherit}
 .save-hint{font-size:12px;color:var(--ok);display:inline-flex;align-items:center;gap:5px;align-self:center}
 .save-hint svg{display:inline-block}
 
+/* ---------- 脚本类型切换 ---------- */
+.mode-tabs{display:flex;gap:4px;margin-bottom:14px;background:#eef1f5;border-radius:8px;padding:3px}
+.mode-tabs button{
+  flex:1;border:0;background:transparent;padding:6px 10px;border-radius:6px;
+  font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;
+}
+.mode-tabs button.on{background:#fff;color:var(--accent);box-shadow:var(--shadow)}
+
+/* ---------- 触摸脚本编辑器 ---------- */
+.touch-steps{margin:0 0 14px;display:flex;flex-direction:column;gap:6px}
+.tstep{
+  display:flex;align-items:center;gap:8px;padding:8px 10px;
+  border:1px solid var(--line);border-radius:7px;background:#fafbfc;font-size:13px;
+}
+.tstep .ico{display:inline-flex;flex:none;color:var(--accent)}
+.tstep .sum{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#33414f}
+.tstep .minibtn{
+  border:0;background:#eef1f5;color:var(--muted);width:22px;height:22px;border-radius:5px;
+  display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex:none;
+}
+.tstep .minibtn:hover{background:#e1e7ef;color:var(--ink)}
+.tstep .minibtn.del{color:var(--err)}
+.tstep .minibtn.del:hover{background:var(--err-weak)}
+.touch-empty{color:var(--muted);font-size:13px;text-align:center;padding:18px;border:1px dashed var(--line-strong);border-radius:7px}
+.touch-add{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;padding:12px;border:1px solid var(--line);border-radius:8px;background:#fafbfc}
+.touch-add .ta-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.touch-add .ta-row label{font-size:12px;color:var(--muted);flex:none}
+.touch-add .ta-row input{
+  width:74px;padding:5px 7px;border:1px solid var(--line-strong);border-radius:6px;
+  font-size:12.5px;font-family:var(--mono);
+}
+.touch-add .ta-row input:focus{border-color:var(--accent);outline:none}
+.touch-hint{font-size:12px;color:var(--muted);line-height:1.6;margin-top:-6px;margin-bottom:14px}
+
 /* ---------- 传输日志（右侧底部，可折叠） ---------- */
 .log-panel{flex:none;background:var(--panel);border-top:1px solid var(--line);display:flex;flex-direction:column;max-height:180px}
 .log-head{display:flex;align-items:center;gap:8px;padding:7px 14px;cursor:pointer;font-size:12.5px;color:var(--muted)}
@@ -306,6 +340,10 @@ input,textarea{font-family:inherit}
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
         代码
       </button>
+      <button class="btn sm" id="btnAddTouch" title="在选中位置新建触摸脚本（可视化编辑坐标/滑动/延时）">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 11V6a2 2 0 0 1 4 0v4"/><path d="M11 11V5a2 2 0 0 1 4 0v6"/><path d="M15 11V7a2 2 0 0 1 4 0v9a6 6 0 0 1-6 6h-1.7a5 5 0 0 1-4-2.2L3.5 15.6a1.6 1.6 0 0 1 2.2-2.3L8 15"/></svg>
+        触摸
+      </button>
       <button class="btn sm" id="btnAddTxt" title="从本地 txt 文件导入（可在文件选择器多选）">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         txt
@@ -440,8 +478,8 @@ function collectScripts() {
 function makeDir(name, parent) {
   return { id: nid(), type: 'dir', name, children: [], parent };
 }
-function makeScript(name, command, parent) {
-  return { id: nid(), type: 'script', name, command: command || '', parent };
+function makeScript(name, command, parent, mode) {
+  return { id: nid(), type: 'script', name, command: command || '', mode: mode || 'code', parent };
 }
 
 /* ---------- Toast ---------- */
@@ -517,6 +555,9 @@ function buildNode(node) {
     const sp = document.createElement('span'); sp.className = 'chev spacer'; row.appendChild(sp);
     const ic = document.createElement('span'); ic.className = 'tico'; ic.innerHTML = SVG.file; row.appendChild(ic);
     const nm = document.createElement('span'); nm.className = 'tname'; nm.textContent = node.name; row.appendChild(nm);
+    if (node.mode === 'touch') {
+      const b = document.createElement('span'); b.className = 'badge touch'; b.textContent = '触'; b.title = '触摸脚本（坐标/滑动/延时）'; row.appendChild(b);
+    }
     if (u8len(node.command) > LIM.content) {
       const w = document.createElement('span'); w.className = 'tico ovr'; w.style.color = 'var(--err)'; w.title = '命令超出 ' + LIM.content + ' 字节'; w.innerHTML = SVG.warn; row.appendChild(w);
     }
@@ -567,11 +608,11 @@ function addFolder(parentId) {
   state.selectedId = d.id;
   renderTree(); renderEditor();
 }
-function addScript(parentId, name, command) {
+function addScript(parentId, name, command, mode) {
   const parent = state.nodes.get(parentId || state.rootId);
   if (!parent || parent.type !== 'dir') return;
-  const nm = uniqueName(parent, name || '新建代码');
-  const s = makeScript(nm, command || '', parent);
+  const nm = uniqueName(parent, name || (mode === 'touch' ? '新建触摸' : '新建代码'));
+  const s = makeScript(nm, command || '', parent, mode);
   parent.children.push(s);
   state.nodes.set(s.id, s);
   state.expanded.add(parent.id);
@@ -656,10 +697,18 @@ function renderDirEditor(el, node) {
 function renderScriptEditor(el, node) {
   el.innerHTML = '';
   const card = document.createElement('div'); card.className = 'editor-card';
-  card.innerHTML = '<div class="ec-head"><span class="ico">' + SVG.file + '</span><span class="k">代码</span><span class="type-tag">' + scriptRelPath(node) + '</span></div>';
+  const isTouch = node.mode === 'touch';
+  card.innerHTML = '<div class="ec-head"><span class="ico">' + SVG.file + '</span><span class="k">' + (isTouch ? '触摸脚本' : '代码') + '</span><span class="type-tag">' + scriptRelPath(node) + '</span></div>';
+  // 类型切换
+  const tabs = document.createElement('div'); tabs.className = 'mode-tabs';
+  const tCode = document.createElement('button'); tCode.textContent = '代码脚本'; tCode.className = isTouch ? '' : 'on';
+  const tTouch = document.createElement('button'); tTouch.textContent = '触摸脚本'; tTouch.className = isTouch ? 'on' : '';
+  tCode.onclick = () => { node.mode = 'code'; renderEditor(); };
+  tTouch.onclick = () => { node.mode = 'touch'; renderEditor(); };
+  tabs.append(tCode, tTouch); card.appendChild(tabs);
   // 名称（支持中文）
   const f = document.createElement('div'); f.className = 'field';
-  f.innerHTML = '<label>代码名称<span class="cnt">' + u8len(node.name) + ' / ' + LIM.scriptName + ' 字节</span></label><input type="text">';
+  f.innerHTML = '<label>名称<span class="cnt">' + u8len(node.name) + ' / ' + LIM.scriptName + ' 字节</span></label><input type="text">';
   const inp = f.querySelector('input'); inp.value = node.name;
   inp.addEventListener('input', () => {
     const v = escName(inp.value);
@@ -670,31 +719,191 @@ function renderScriptEditor(el, node) {
     if (!over && v) { node.name = v; refreshNodeLabel(node.id); }
   });
   card.appendChild(f);
-  // 代码内容
-  const cf = document.createElement('div'); cf.className = 'field';
-  cf.innerHTML = '<label>代码内容（纯英文 CMD）<span class="cnt">' + u8len(node.command) + ' / ' + LIM.content + ' 字节</span></label><textarea spellcheck="false" placeholder="在此输入代码内容（仅支持英文）"></textarea>';
-  const ta = cf.querySelector('textarea'); ta.value = node.command;
-  ta.addEventListener('input', () => {
-    node.command = ta.value;
-    const n = u8len(node.command);
-    cf.querySelector('.cnt').textContent = n + ' / ' + LIM.content + ' 字节';
-    cf.querySelector('.cnt').classList.toggle('over', n > LIM.content);
-    markScriptOver(node.id, n > LIM.content);
-  });
-  card.appendChild(cf);
-  if (u8len(node.command) > LIM.content) {
-    const w = document.createElement('div'); w.className = 'err-box';
-    w.innerHTML = SVG.warn + '<span>代码内容超过 ' + LIM.content + ' 字节，设备端会被截断，请精简后再发送。</span>';
-    card.appendChild(w);
+  // 内容区
+  if (isTouch) {
+    renderTouchEditorInto(card, node);
+  } else {
+    const cf = document.createElement('div'); cf.className = 'field';
+    cf.innerHTML = '<label>代码内容（纯英文 CMD）<span class="cnt">' + u8len(node.command) + ' / ' + LIM.content + ' 字节</span></label><textarea spellcheck="false" placeholder="在此输入代码内容（仅支持英文）"></textarea>';
+    const ta = cf.querySelector('textarea'); ta.value = node.command;
+    ta.addEventListener('input', () => {
+      node.command = ta.value;
+      const n = u8len(node.command);
+      cf.querySelector('.cnt').textContent = n + ' / ' + LIM.content + ' 字节';
+      cf.querySelector('.cnt').classList.toggle('over', n > LIM.content);
+      markScriptOver(node.id, n > LIM.content);
+    });
+    card.appendChild(cf);
+    if (u8len(node.command) > LIM.content) {
+      const w = document.createElement('div'); w.className = 'err-box';
+      w.innerHTML = SVG.warn + '<span>代码内容超过 ' + LIM.content + ' 字节，设备端会被截断，请精简后再发送。</span>';
+      card.appendChild(w);
+    }
+    const hint = document.createElement('div'); hint.className = 'hint-row';
+    hint.innerHTML = SVG.info + '<span>代码仅支持英文（设备端会以 30ms/字符模拟键盘输入）。代码内容不支持中文。</span>';
+    card.appendChild(hint);
   }
-  // 提示 + 操作
-  const hint = document.createElement('div'); hint.className = 'hint-row';
-  hint.innerHTML = SVG.info + '<span>代码仅支持英文（设备端会以 30ms/字符模拟键盘输入）。代码内容不支持中文。</span>';
-  card.appendChild(hint);
+  // 操作
   const acts = document.createElement('div'); acts.className = 'editor-actions';
-  const del = mkBtn('删除代码', 'danger', () => deleteNode(node.id));
+  const del = mkBtn(isTouch ? '删除触摸脚本' : '删除代码', 'danger', () => deleteNode(node.id));
   acts.appendChild(del); card.appendChild(acts);
   el.appendChild(card);
+}
+
+/* ---------- 触摸脚本编辑器 ---------- */
+// 屏幕分辨率(像素)与 X/Y 坐标上限: 用户按像素填坐标, 前端换算成 HID 下发。
+// 部分 Android 设备(如魅族18X)对 BLE 触摸坐标的有效上限不是 32767, 且 X/Y 可不同
+// (实测 X≈4600, Y≈3200)。前端换算时用各自上限, 校准后落点即准。
+let s_tw = +(localStorage.getItem('touch_w') || 1080);
+let s_th = +(localStorage.getItem('touch_h') || 2400);
+let s_dmaxX = +(localStorage.getItem('touch_maxx') || 32767);
+let s_dmaxY = +(localStorage.getItem('touch_maxy') || 32767);
+const hidOfX = (px) => Math.round(px / s_tw * s_dmaxX);      // 像素X → HID
+const hidOfY = (py) => Math.round(py / s_th * s_dmaxY);      // 像素Y → HID
+const pxOfX  = (hid) => Math.round(hid / s_dmaxX * s_tw);    // HID → 像素X
+const pxOfY  = (hid) => Math.round(hid / s_dmaxY * s_th);    // HID → 像素Y
+// 把一段坐标序列文本解析成步骤数组（tap 由 down+sleep+up 合成）。
+// 命令文本中是 HID 坐标, 解析后转成像素存 step, 便于编辑区按像素展示。
+function parseTouchSteps(text) {
+  const steps = [];
+  let pending = null;   // {x,y,hold} 等待 up
+  for (const raw of (text || '').split('\n')) {
+    const line = raw.trim();
+    if (!line || line[0] === '#') continue;
+    let m;
+    if ((m = line.match(/^down\s+(\d+)\s*,\s*(\d+)/))) { pending = { x: pxOfX(+m[1]), y: pxOfY(+m[2]), hold: 0 }; }
+    else if ((m = line.match(/^up\b/))) {
+      if (pending) { if (pending.hold > 0) steps.push({ t: 'tap', x: pending.x, y: pending.y, d: pending.hold }); pending = null; }
+    }
+    else if (pending && (m = line.match(/^sleep\s+(\d+)/))) { pending.hold += +m[1]; }
+    else if ((m = line.match(/^swipe\s+(\d+)\s*,\s*(\d+)\s+(\d+)\s*,\s*(\d+)(?:\s*,\s*(\d+))?/))) {
+      steps.push({ t: 'swipe', x1: pxOfX(+m[1]), y1: pxOfY(+m[2]), x2: pxOfX(+m[3]), y2: pxOfY(+m[4]), d: m[5] ? +m[5] : 300 });
+    }
+    else if ((m = line.match(/^sleep\s+(\d+)/))) { steps.push({ t: 'sleep', d: +m[1] }); }
+  }
+  return steps;
+}
+// 步骤数组 → 坐标序列文本（与固件 app_hid 触摸解析一致, 坐标换算成 HID）。
+function touchStepsToText(steps) {
+  const lines = [];
+  for (const s of steps) {
+    if (s.t === 'tap') {
+      lines.push('down ' + hidOfX(s.x) + ',' + hidOfY(s.y));
+      if (s.d > 0) lines.push('sleep ' + s.d);
+      lines.push('up');
+    } else if (s.t === 'swipe') {
+      lines.push('swipe ' + hidOfX(s.x1) + ',' + hidOfY(s.y1) + ' ' + hidOfX(s.x2) + ',' + hidOfY(s.y2) + (s.d > 0 ? ',' + s.d : ''));
+    } else if (s.t === 'sleep') {
+      lines.push('sleep ' + s.d);
+    }
+  }
+  return lines.join('\n');
+}
+function stepText(s) {
+  if (s.t === 'tap') return '点击 (' + s.x + ', ' + s.y + ') 按住 ' + s.d + 'ms';
+  if (s.t === 'swipe') return '滑动 (' + s.x1 + ',' + s.y1 + ') → (' + s.x2 + ',' + s.y2 + ') ' + s.d + 'ms';
+  return '延时 ' + s.d + 'ms';
+}
+function syncTouch(node) { node.command = touchStepsToText(node._steps); }
+function moveStep(node, i, delta) {
+  const j = i + delta;
+  if (j < 0 || j >= node._steps.length) return;
+  const a = node._steps; [a[i], a[j]] = [a[j], a[i]];
+  syncTouch(node); renderEditor();
+}
+function delStep(node, i) { node._steps.splice(i, 1); syncTouch(node); renderEditor(); }
+function minibtn(label, cls, fn) {
+  const b = document.createElement('button');
+  b.className = 'minibtn' + (cls ? ' ' + cls : ''); b.innerHTML = label; b.type = 'button';
+  b.addEventListener('click', fn); return b;
+}
+function renderTouchEditorInto(card, node) {
+  if (!node._steps) node._steps = parseTouchSteps(node.command);
+  const wrap = document.createElement('div');
+  // 屏幕分辨率设置（按像素填坐标, 前端换算 HID）
+  const mkRow = (labelHtml) => {
+    const r = document.createElement('div'); r.className = 'ta-row'; r.innerHTML = labelHtml; return r;
+  };
+  const res = mkRow('<label>屏幕分辨率</label>宽<input data-w> 高<input data-h> px <label style="margin-left:8px">X上限</label><input data-maxx style="width:64px"> <label>Y上限</label><input data-maxy style="width:64px">');
+  res.querySelector('[data-w]').value = s_tw;
+  res.querySelector('[data-h]').value = s_th;
+  res.querySelector('[data-maxx]').value = s_dmaxX;
+  res.querySelector('[data-maxy]').value = s_dmaxY;
+  const saveRes = () => {
+    const w = Math.max(100, +res.querySelector('[data-w]').value || 0);
+    const h = Math.max(100, +res.querySelector('[data-h]').value || 0);
+    const mx = Math.max(100, +res.querySelector('[data-maxx]').value || 32767);
+    const my = Math.max(100, +res.querySelector('[data-maxy]').value || 32767);
+    if (w && h && mx && my && (w !== s_tw || h !== s_th || mx !== s_dmaxX || my !== s_dmaxY)) {
+      s_tw = w; s_th = h; s_dmaxX = mx; s_dmaxY = my;
+      localStorage.setItem('touch_w', String(s_tw));
+      localStorage.setItem('touch_h', String(s_th));
+      localStorage.setItem('touch_maxx', String(s_dmaxX));
+      localStorage.setItem('touch_maxy', String(s_dmaxY));
+      renderEditor();
+    }
+  };
+  res.querySelector('[data-w]').addEventListener('change', saveRes);
+  res.querySelector('[data-h]').addEventListener('change', saveRes);
+  res.querySelector('[data-maxx]').addEventListener('change', saveRes);
+  res.querySelector('[data-maxy]').addEventListener('change', saveRes);
+  wrap.appendChild(res);
+  // 步骤列表
+  const list = document.createElement('div'); list.className = 'touch-steps';
+  if (node._steps.length === 0) {
+    list.innerHTML = '<div class="touch-empty">还没有任何触摸步骤。用下方「添加步骤」开始。</div>';
+  } else {
+    node._steps.forEach((s, i) => {
+      const row = document.createElement('div'); row.className = 'tstep';
+      const ic = document.createElement('span'); ic.className = 'ico';
+      ic.innerHTML = s.t === 'tap' ? SVG.file : (s.t === 'swipe' ? SVG.chev : SVG.info);
+      const sum = document.createElement('span'); sum.className = 'sum'; sum.textContent = stepText(s);
+      row.append(ic, sum, minibtn('↑', '', () => moveStep(node, i, -1)),
+                 minibtn('↓', '', () => moveStep(node, i, 1)),
+                 minibtn(SVG.trash, 'del', () => delStep(node, i)));
+      list.appendChild(row);
+    });
+  }
+  wrap.appendChild(list);
+  // 添加步骤表单
+  const add = document.createElement('div'); add.className = 'touch-add';
+  // 点击
+  const r1 = mkRow('<label>点击</label>X<input data-x placeholder="0"> Y<input data-y placeholder="0"> 按住<input data-d placeholder="0">ms <button class="btn sm" type="button">添加</button>');
+  r1.querySelector('button').onclick = () => {
+    node._steps.push({ t: 'tap', x: +r1.querySelector('[data-x]').value || 0, y: +r1.querySelector('[data-y]').value || 0, d: +r1.querySelector('[data-d]').value || 0 });
+    syncTouch(node); renderEditor();
+  };
+  // 滑动
+  const r2 = mkRow('<label>滑动</label>X1<input data-x1 placeholder="0"> Y1<input data-y1 placeholder="0"> X2<input data-x2 placeholder="0"> Y2<input data-y2 placeholder="0"> 时长<input data-d placeholder="300">ms <button class="btn sm" type="button">添加</button>');
+  r2.querySelector('button').onclick = () => {
+    node._steps.push({ t: 'swipe', x1: +r2.querySelector('[data-x1]').value || 0, y1: +r2.querySelector('[data-y1]').value || 0, x2: +r2.querySelector('[data-x2]').value || 0, y2: +r2.querySelector('[data-y2]').value || 0, d: +r2.querySelector('[data-d]').value || 300 });
+    syncTouch(node); renderEditor();
+  };
+  // 延时
+  const r3 = mkRow('<label>延时</label><input data-d placeholder="1000">ms <button class="btn sm" type="button">添加</button>');
+  r3.querySelector('button').onclick = () => {
+    node._steps.push({ t: 'sleep', d: +r3.querySelector('[data-d]').value || 0 });
+    syncTouch(node); renderEditor();
+  };
+  add.append(r1, r2, r3);
+  wrap.appendChild(add);
+  const hint = document.createElement('div'); hint.className = 'touch-hint';
+  hint.innerHTML = '坐标按<b>屏幕像素</b>填写，前端按 X上限/Y上限 换算成 HID 下发（当前 ' + s_tw + '×' + s_th + '，X上限 ' + s_dmaxX + '、Y上限 ' + s_dmaxY + '）。若落点偏差，按比例调对应上限即可校准。';
+  wrap.appendChild(hint);
+  // 预览（可编辑，编辑后重解析）
+  const pf = document.createElement('div'); pf.className = 'field';
+  pf.innerHTML = '<label>生成的触摸序列<span class="cnt">' + u8len(node.command) + ' / ' + LIM.content + ' 字节</span></label><textarea spellcheck="false" style="min-height:160px"></textarea>';
+  const pta = pf.querySelector('textarea'); pta.value = node.command;
+  const refreshCnt = () => {
+    const n = u8len(node.command);
+    pf.querySelector('.cnt').textContent = n + ' / ' + LIM.content + ' 字节';
+    pf.querySelector('.cnt').classList.toggle('over', n > LIM.content);
+    markScriptOver(node.id, n > LIM.content);
+  };
+  pta.addEventListener('input', () => { node.command = pta.value; refreshCnt(); });
+  pta.addEventListener('blur', () => { node._steps = parseTouchSteps(node.command); renderEditor(); });
+  wrap.appendChild(pf);
+  card.appendChild(wrap);
 }
 function markScriptOver(id, over) {
   const row = document.querySelector('.trow.script[data-id="' + id + '"]');
@@ -714,6 +923,7 @@ function mkBtn(label, kind, onClick) {
 /* ---------- 工具栏按钮与日志折叠 ---------- */
 document.getElementById('btnAddFolder').addEventListener('click', () => addFolder(state.selectedId && state.nodes.get(state.selectedId).type === 'dir' ? state.selectedId : state.rootId));
 document.getElementById('btnAddScript').addEventListener('click', () => addScript(state.selectedId && state.nodes.get(state.selectedId).type === 'dir' ? state.selectedId : state.rootId));
+document.getElementById('btnAddTouch').addEventListener('click', () => addScript(state.selectedId && state.nodes.get(state.selectedId).type === 'dir' ? state.selectedId : state.rootId, null, null, 'touch'));
 document.getElementById('btnAddTxt').addEventListener('click', () => document.getElementById('fileTxt').click());
 
 const logPanel = document.getElementById('logPanel');
@@ -865,7 +1075,7 @@ document.getElementById('fileTxt').addEventListener('change', async e => {
 
 /* ---------- JSON 导出 ---------- */
 function toJson(node) {
-  if (node.type === 'script') return { type: 'script', name: node.name, command: node.command };
+  if (node.type === 'script') return { type: 'script', name: node.name, command: node.command, mode: node.mode || 'code' };
   return { type: 'dir', name: node.name, children: node.children.map(toJson) };
 }
 document.getElementById('btnExport').addEventListener('click', () => {
@@ -910,7 +1120,7 @@ document.getElementById('fileImport').addEventListener('change', e => {
 });
 function fromJson(obj) {
   if (obj.type === 'script') {
-    return makeScript(String(obj.name || '代码').trim() || '代码', String(obj.command || ''), null);
+    return makeScript(String(obj.name || '代码').trim() || '代码', String(obj.command || ''), null, obj.mode === 'touch' ? 'touch' : 'code');
   }
   const d = makeDir(String(obj.name || '文件夹').trim() || '文件夹', null);
   (obj.children || []).forEach(c => {
