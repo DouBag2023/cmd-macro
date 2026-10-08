@@ -752,12 +752,12 @@ function renderScriptEditor(el, node) {
 
 /* ---------- 触摸脚本编辑器 ---------- */
 // 屏幕分辨率(像素)与 X/Y 坐标上限: 用户按像素填坐标, 前端换算成 HID 下发。
-// 部分 Android 设备(如魅族18X)对 BLE 触摸坐标的有效上限不是 32767, 且 X/Y 可不同
+// 部分 Android 设备(如魅族18X)对 BLE 触摸坐标的有效上限不是 16383, 且 X/Y 可不同
 // (实测 X≈4600, Y≈3200)。前端换算时用各自上限, 校准后落点即准。
 let s_tw = +(localStorage.getItem('touch_w') || 1080);
 let s_th = +(localStorage.getItem('touch_h') || 2400);
-let s_dmaxX = +(localStorage.getItem('touch_maxx') || 32767);
-let s_dmaxY = +(localStorage.getItem('touch_maxy') || 32767);
+let s_dmaxX = +(localStorage.getItem('touch_maxx') || 16383);
+let s_dmaxY = +(localStorage.getItem('touch_maxy') || 16383);
 const hidOfX = (px) => Math.round(px / s_tw * s_dmaxX);      // 像素X → HID
 const hidOfY = (py) => Math.round(py / s_th * s_dmaxY);      // 像素Y → HID
 const pxOfX  = (hid) => Math.round(hid / s_dmaxX * s_tw);    // HID → 像素X
@@ -832,8 +832,8 @@ function renderTouchEditorInto(card, node) {
   const saveRes = () => {
     const w = Math.max(100, +res.querySelector('[data-w]').value || 0);
     const h = Math.max(100, +res.querySelector('[data-h]').value || 0);
-    const mx = Math.max(100, +res.querySelector('[data-maxx]').value || 32767);
-    const my = Math.max(100, +res.querySelector('[data-maxy]').value || 32767);
+    const mx = Math.max(100, +res.querySelector('[data-maxx]').value || 16383);
+    const my = Math.max(100, +res.querySelector('[data-maxy]').value || 16383);
     if (w && h && mx && my && (w !== s_tw || h !== s_th || mx !== s_dmaxX || my !== s_dmaxY)) {
       s_tw = w; s_th = h; s_dmaxX = mx; s_dmaxY = my;
       localStorage.setItem('touch_w', String(s_tw));
